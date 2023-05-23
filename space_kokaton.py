@@ -291,7 +291,28 @@ class Score:
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         screen.blit(self.image, self.rect)
+class Reload:
+    """
+    時間を計測するして、表示するクラス
+    """
+    def __init__(self, start,fr):
+        """
+        start = 初期値
+        fr = フレームレート
+        """
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.start = start//fr  
+        self.image = self.font.render(f"Reloadtime: {self.start}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 125, HEIGHT-25 
 
+    def time_up(self, add):
+        self.start += add
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Reloadtime: {self.start}", 0, self.color)
+        screen.blit(self.image, self.rect)
 class Gravity(pg.sprite.Sprite):
     """
     重力球の追加
@@ -343,15 +364,28 @@ def main():
     gravity = pg.sprite.Group()
     tmr = 0
     clock = pg.time.Clock()
+    re = 0
+    count = 0
+    re_time = False
     while True:
         key_lst = pg.key.get_pressed()
         shift_pressed = False
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and (re ==0 or tmr/50>re+5) :#ビームを５回以上だした後に５秒たったら
                 beams.add(Beam(bird))
-                if pg.key.get_mods() & pg.KMOD_LSHIFT:
+                count += 1#出した数ビームの数
+                if count >= 5:#出したビームの数が５いじょうなら
+                    re = tmr/50#時間を記録
+                    re_time = Reload(re-tmr//50, 50)#Reloadクラスのインスタンス作成
+                    count = 0#出したビームの数を０にする
+                if pg.key.get_mods() & pg.KMOD_LSHIFT :
+                    count += 5#出した数ビームの数
+                    if count >= 5:
+                        count = 0
+                        re = tmr/50
+                        re_time = Reload(re-tmr//50, 50)
                     shift_pressed = True
             if event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK:
                 if score.score >= 10 and len(Shields) == 0:
@@ -433,12 +467,19 @@ def main():
         exps.draw(screen)
         Shields.update() #防御壁の更新
         Shields.draw(screen) #防御壁の描画
+        if re_time:
+            if tmr % 50 == 0:
+                if re_time.start >= 5:
+                        re_time.start =0
+                else:
+                    re_time.time_up(1)
+            re_time.update(screen)
+
 
         score.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
-
 
 if __name__ == "__main__":
     pg.init()
