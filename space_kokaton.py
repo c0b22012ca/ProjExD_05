@@ -302,7 +302,7 @@ class Reload:
         """
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.start = start//fr  
+        self.start = start//fr
         self.image = self.font.render(f"Reloadtime: {self.start}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 125, HEIGHT-25 
@@ -428,11 +428,11 @@ def main():
                 score.score_up(1)  # 1点アップ
             
             else:
-                bird.change_img(8, screen) # こうかとん悲しみエフェクト
-                score.update(screen)
-                pg.display.update()
-                time.sleep(2)
-                return
+               bird.change_img(8, screen) # こうかとん悲しみエフェクト
+               score.update(screen)
+               pg.display.update()
+               time.sleep(2)
+               return
 
         for bomb in pg.sprite.groupcollide(bombs,gravity, True, False).keys():
             exps.add(Explosion(bomb, 50))
@@ -469,11 +469,9 @@ def main():
         Shields.draw(screen) #防御壁の描画
         if re_time:
             if tmr % 50 == 0:
-                if re_time.start >= 5:
-                        re_time.start =0
-                else:
-                    re_time.time_up(1)
-            re_time.update(screen)
+                re_time.time_up(1)
+            if re_time.start <= 5:
+                re_time.update(screen)
 
 
         score.update(screen)
