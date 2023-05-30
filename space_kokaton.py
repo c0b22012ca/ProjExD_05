@@ -5,6 +5,7 @@ import time
 import pygame
 
 import pygame as pg
+from pygame.locals import *
 
 
 WIDTH = 1600  # ゲームウィンドウの幅
@@ -55,7 +56,7 @@ class Bird(pg.sprite.Sprite):
         引数2 xy：こうかとん画像の位置座標タプル
         """
         super().__init__()
-        img0 = pg.transform.rotozoom(pg.image.load(f"ex04/fig/{num}.png"), 0, 2.0)
+        img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/{num}.png"), 0, 2.0)
         img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
         self.imgs = {
             (+1, 0): img,  # 右
@@ -80,7 +81,7 @@ class Bird(pg.sprite.Sprite):
         引数1 num：こうかとん画像ファイル名の番号
         引数2 screen：画面Surface
         """
-        self.image = pg.transform.rotozoom(pg.image.load(f"ex04/fig/{num}.png"), 0, 2.0)
+        self.image = pg.transform.rotozoom(pg.image.load(f"ex05/fig/{num}.png"), 0, 2.0)
         screen.blit(self.image, self.rect)
 
     def change_state(self, state: str, hyper_life: int):
@@ -178,7 +179,7 @@ class Beam(pg.sprite.Sprite):
         self.vx, self.vy = bird.get_direction()
         angle = math.degrees(math.atan2(-self.vy, self.vx))
         angle += spin #angleにspinを加える
-        self.image = pg.transform.rotozoom(pg.image.load(f"ex04/fig/beam.png"), angle, 2.0)
+        self.image = pg.transform.rotozoom(pg.image.load(f"ex05/fig/beam.png"), angle, 2.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
         self.rect = self.image.get_rect()
@@ -194,6 +195,50 @@ class Beam(pg.sprite.Sprite):
         self.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
             self.kill()
+
+class Hp: #HPバー
+    def __init__(self, x, y, width, max):
+
+        self.x = x
+        self.y = y
+        self.width = width
+        self.max = max # 最大HP
+        self.hp = max # HP
+        self.mark = int((self.width - 4) / self.max) # HPバーの1目盛り
+
+        self.font = pg.font.SysFont(None, 28)
+        self.label = self.font.render("HP", True, (255, 255, 255))
+        self.frame = Rect(self.x + 2 + self.label.get_width(), self.y, self.width, self.label.get_height())
+        self.bar = Rect(self.x + 4 + self.label.get_width(), self.y + 2, self.width - 4, self.label.get_height() - 4)
+        self.value = Rect(self.x + 4 + self.label.get_width(), self.y + 2, self.width - 4, self.label.get_height() - 4)
+
+        self.effect_bar = Rect(self.x + 4 + self.label.get_width(), self.y + 2, self.width - 4, self.label.get_height() - 4)
+        self.effect_color = (0, 255, 255)
+    
+    def update(self):
+        if self.hp >= self.max:
+            self.hp = self.max
+            
+        if self.effect_bar.width > self.mark * self.hp:
+            self.value.width = self.mark * self.hp
+            
+        elif self.value.width < self.mark * self.hp:
+            self.effect_bar.width = self.mark * self.hp
+
+        # effect_barの色を変える
+        if self.effect_bar.width <= self.bar.width / 6:
+            self.effect_color = (0, 255, 0)
+        elif self.effect_bar.width <= self.bar.width / 2:
+            self.effect_color = (0, 255, 0)
+        else:
+            self.effect_color = (255, 0, 0)
+
+    def draw(self, screen):
+        pg.draw.rect(screen, (255, 255, 255), self.frame)
+        pg.draw.rect(screen, (0, 0, 0), self.bar)
+        pg.draw.rect(screen, self.effect_color, self.effect_bar)
+        pg.draw.rect(screen, (0, 255, 0), self.value)
+        screen.blit(self.label, (self.x, self.y))
 
 
 class NeoBeam: #追加機能４弾幕
@@ -219,7 +264,7 @@ class Explosion(pg.sprite.Sprite):
         引数2 life：爆発時間
         """
         super().__init__()
-        img = pg.image.load("ex04/fig/explosion.gif")
+        img = pg.image.load("ex05/fig/explosion.gif")
         self.imgs = [img, pg.transform.flip(img, 1, 1)]
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=obj.rect.center)
@@ -256,7 +301,7 @@ class Enemy(pg.sprite.Sprite):
     """
     敵機に関するクラス
     """
-    imgs = [pg.image.load(f"ex04/fig/alien{i}.png") for i in range(1, 4)]
+    imgs = [pg.image.load(f"ex05/fig/alien{i}.png") for i in range(1, 4)]
     
     def __init__(self):
         super().__init__()
@@ -379,10 +424,11 @@ class fire(pg.sprite.Sprite):
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
-    bg_img = pg.image.load("ex04/fig/pg_bg.jpg")
+    bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
     font1 = pygame.font.SysFont(None, 50)
     bird = Bird(3, (900, 400))
+    hp = Hp(40, 800, 100, 4)
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
@@ -458,21 +504,27 @@ def main():
                 score.score_up(1)  # 1点アップ
             
             else:
-               bird.change_img(8, screen) # こうかとん悲しみエフェクト
-               score.update(screen)
-               pg.display.update()
-               time.sleep(2)
-               return
+                exps.add(Explosion(bomb, 50)) #爆発エフェクト
+                hp.hp -= 1 #㏋　ー１
+                if hp.hp == 0: #HPがなくなったら
+                    bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    return
 
         for bomb in pg.sprite.groupcollide(bombs,gravity, True, False).keys():
             exps.add(Explosion(bomb, 50))
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
-            bird.change_img(8, screen) # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            exps.add(Explosion(bomb, 50)) #爆発エフェクト
+            hp.hp -= 1 #HP -1
+            if hp.hp == 0: #HPがなくなったら
+                bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
         
         if len(pg.sprite.spritecollide(bird, fires, True)) != 0:#こうかとんが火（オレンジの四角）に触れたら負け
             bird.change_img(10, screen) # 焼き鳥の画像
@@ -505,6 +557,8 @@ def main():
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
+        hp.update()
+        hp.draw(screen)
         emys.update()
         emys.draw(screen)
         bombs.update()
