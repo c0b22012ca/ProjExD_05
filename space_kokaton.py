@@ -146,6 +146,7 @@ class Bomb(pg.sprite.Sprite):
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height/2
         self.speed = 6
+        self.cnt = 0
 
     def update(self):
         """
@@ -153,8 +154,15 @@ class Bomb(pg.sprite.Sprite):
         引数 screen：画面Surface
         """
         self.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy)
-        if check_bound(self.rect) != (True, True):
-            self.kill()
+        if self.cnt == 3:  # 爆弾が壁に3回当たったら
+            self.kill()  # 爆弾を削除
+        if check_bound(self.rect) == (False, True):  # 左右の壁に当たったとき
+            self.vx = -self.vx  # 移動方向を反転する
+            self.cnt += 1
+        elif check_bound(self.rect) == (True,False):  # 上下の壁に当たったとき
+            self.vy = -self.vy  # 方向を反転
+            self.cnt += 1
+
 
 
 class Beam(pg.sprite.Sprite):
