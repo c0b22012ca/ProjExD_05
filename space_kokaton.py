@@ -367,6 +367,37 @@ class Reload:
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Reloadtime: {self.start}", 0, self.color)
         screen.blit(self.image, self.rect)
+
+class Finish:
+    """
+    プログラムを終わらせるためのボタン表示
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.image = self.font.render(f"Finish = Enter", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 1430, HEIGHT-50
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Finish = Enter", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+class Continue:
+    """
+    プログラムを続けるためのボタン表示
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.image = self.font.render(f"Continue = Space", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 1410, HEIGHT-80
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Continue = Space", 0, self.color)
+        screen.blit(self.image, self.rect)
+
 class Gravity(pg.sprite.Sprite):
     """
     重力球の追加
@@ -424,6 +455,11 @@ class fire(pg.sprite.Sprite):
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
+    bg_img = pg.image.load("ex04/fig/pg_bg.jpg")
+    clear_img = pg.image.load("ex05/fig/text_gameclear.png")
+    score = Score()
+    finish = Finish()
+    conti =Continue()
     bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
     font1 = pygame.font.SysFont(None, 50)
@@ -434,7 +470,9 @@ def main():
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
     Shields = pg.sprite.Group()
+    i = 0 #クリア後の分岐のための真偽値
     fires = pg.sprite.Group()
+
     gravity = pg.sprite.Group()
     tmr = 0
     clock = pg.time.Clock()
@@ -476,8 +514,16 @@ def main():
             if event.type == pg.KEYDOWN and event.key == pg.K_TAB and score.score >= 50:
                 score.score_up(-50)
                 gravity.add(Gravity(bird, 200, 500))
+
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                pg.quit()
+                sys.exit()
+            if i != 0 and event.type == pg.KEYDOWN and event.key == pg.K_SPACE: #クリア後スペースを押すともう一度プレイできる
+                main()
+
             if score.score >= 50 and len(fires) == 0:
                     fires.add(fire(bird,400))
+
             
         screen.blit(bg_img, [0, 0])
 
@@ -554,32 +600,45 @@ def main():
                 neo_beam = NeoBeam(bird, num_beams)
                 beams.add(*neo_beam.gen_beams())
 
-        bird.update(key_lst, screen)
-        beams.update()
-        beams.draw(screen)
-        hp.update()
-        hp.draw(screen)
-        emys.update()
-        emys.draw(screen)
-        bombs.update()
-        bombs.draw(screen)
-        exps.update()
-        exps.draw(screen)
-        Shields.update() #防御壁の更新
-        Shields.draw(screen) #防御壁の描画
-        fires.update()#焼野原の更新
-        fires.draw(screen) #焼野原の描画
-        if re_time:
-            if tmr % 50 == 0:
-                re_time.time_up(1)
-            if re_time.start <= 5:
-                re_time.update(screen)
+        if score.score >= 300 : #scoreが300点以上になると
+            screen.blit(bg_img, [0, 0])
+            screen.blit(clear_img, [300, 200]) # ゲームクリア
+            i = 1 #クリア後というのを示す
+            score.update(screen) #スコア表示
+            finish.update(screen) #終わらせるボタンを表示
+            conti.update(screen) #続けるボタンを表示
+            pg.display.update()
+        
+        if i == 0: #クリアしていない時に実行するもの
+            bird.update(key_lst, screen)
+            beams.update()
+            beams.draw(screen)
+            hp.update()
+            hp.draw(screen)
+            emys.update()
+            emys.draw(screen)
+            bombs.update()
+            bombs.draw(screen)
+            exps.update()
+            exps.draw(screen)
+            Shields.update() #防御壁の更新
+            Shields.draw(screen) #防御壁の描画
+            fires.update()#焼野原の更新
+            fires.draw(screen) #焼野原の描画
+            if re_time:
+                if tmr % 50 == 0:
+                    re_time.time_up(1)
+                if re_time.start <= 5:
+                    re_time.update(screen)
 
-
-        score.update(screen)
-        pg.display.update()
-        tmr += 1
-        clock.tick(50)
+            score.update(screen)
+            pg.display.update()
+            tmr += 1
+            clock.tick(50)
+        else:
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN: #エンターキーを押したときにプログラムを終了
+                pg.quit()
+                sys.exit()
 
 if __name__ == "__main__":
     pg.init()
