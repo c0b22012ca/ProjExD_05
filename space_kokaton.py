@@ -453,9 +453,9 @@ class fire(pg.sprite.Sprite):
     """
 
 def main():
-    pg.display.set_caption("真！こうかとん無双")
+    pg.display.set_caption("逆襲！エイリアン")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
-    bg_img = pg.image.load("ex04/fig/pg_bg.jpg")
+    bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     clear_img = pg.image.load("ex05/fig/text_gameclear.png")
     score = Score()
     finish = Finish()
