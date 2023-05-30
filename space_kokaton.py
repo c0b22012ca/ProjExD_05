@@ -2,6 +2,7 @@ import math
 import random
 import sys
 import time
+import pygame
 
 import pygame as pg
 
@@ -348,19 +349,38 @@ class Gravity(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
+class fire(pg.sprite.Sprite): 
+    "焼野原の追加"
+    def __init__(self,bird: Bird,life : int):
+         super().__init__()
+         self.image = pg.Surface((6800,900))
+         color = (245,120,0)
+         pg.draw.rect(self.image,color,pg.Rect(0,0, 6800,900))
+         self.image.set_alpha(200)
+         self.rect = self.image.get_rect()
+         self.rect.centerx = 0
+         self.rect.centery = 900
+         self.life = life
+    """
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill() #fireグループからの削除
+    """
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("ex04/fig/pg_bg.jpg")
     score = Score()
-
+    font1 = pygame.font.SysFont(None, 50)
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
     Shields = pg.sprite.Group()
-
+    fires = pg.sprite.Group()
     gravity = pg.sprite.Group()
     tmr = 0
     clock = pg.time.Clock()
@@ -402,6 +422,8 @@ def main():
             if event.type == pg.KEYDOWN and event.key == pg.K_TAB and score.score >= 50:
                 score.score_up(-50)
                 gravity.add(Gravity(bird, 200, 500))
+            if score.score >= 50 and len(fires) == 0:
+                    fires.add(fire(bird,400))
             
         screen.blit(bg_img, [0, 0])
 
@@ -444,6 +466,22 @@ def main():
             time.sleep(2)
             return
         
+        if len(pg.sprite.spritecollide(bird, fires, True)) != 0:#こうかとんが火（オレンジの四角）に触れたら負け
+            bird.change_img(10, screen) # 焼き鳥の画像
+            score.update(screen)
+            text1 = font1.render("grilled chicken", True, (255,64,64))
+            screen.blit(text1, (500,500))#火にあたって負けた場合のメッセージ
+            pg.display.update()
+            time.sleep(2)
+            return
+        
+        if len(pg.sprite.spritecollide(bird, emys, True)) != 0: #こうかとんが敵に触れたら負け
+            bird.change_img(8, screen) # こうかとん悲しみエフェクト
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
+        
         for bomb in pg.sprite.groupcollide(bombs, Shields, True, False).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)
@@ -467,6 +505,8 @@ def main():
         exps.draw(screen)
         Shields.update() #防御壁の更新
         Shields.draw(screen) #防御壁の描画
+        fires.update()#焼野原の更新
+        fires.draw(screen) #焼野原の描画
         if re_time:
             if tmr % 50 == 0:
                 re_time.time_up(1)
