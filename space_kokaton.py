@@ -4,6 +4,7 @@ import sys
 import time
 
 import pygame as pg
+from pygame.locals import *
 
 
 WIDTH = 1600  # ゲームウィンドウの幅
@@ -186,6 +187,50 @@ class Beam(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
+class Hp: #HPバー
+    def __init__(self, x, y, width, max):
+
+        self.x = x
+        self.y = y
+        self.width = width
+        self.max = max # 最大HP
+        self.hp = max # HP
+        self.mark = int((self.width - 4) / self.max) # HPバーの1目盛り
+
+        self.font = pg.font.SysFont(None, 28)
+        self.label = self.font.render("HP", True, (255, 255, 255))
+        self.frame = Rect(self.x + 2 + self.label.get_width(), self.y, self.width, self.label.get_height())
+        self.bar = Rect(self.x + 4 + self.label.get_width(), self.y + 2, self.width - 4, self.label.get_height() - 4)
+        self.value = Rect(self.x + 4 + self.label.get_width(), self.y + 2, self.width - 4, self.label.get_height() - 4)
+
+        self.effect_bar = Rect(self.x + 4 + self.label.get_width(), self.y + 2, self.width - 4, self.label.get_height() - 4)
+        self.effect_color = (0, 255, 255)
+    
+    def update(self):
+        if self.hp >= self.max:
+            self.hp = self.max
+            
+        if self.effect_bar.width > self.mark * self.hp:
+            self.value.width = self.mark * self.hp
+            
+        elif self.value.width < self.mark * self.hp:
+            self.effect_bar.width = self.mark * self.hp
+
+        # effect_barの色を変える
+        if self.effect_bar.width <= self.bar.width / 6:
+            self.effect_color = (0, 255, 0)
+        elif self.effect_bar.width <= self.bar.width / 2:
+            self.effect_color = (0, 255, 0)
+        else:
+            self.effect_color = (255, 0, 0)
+
+    def draw(self, screen):
+        pg.draw.rect(screen, (255, 255, 255), self.frame)
+        pg.draw.rect(screen, (0, 0, 0), self.bar)
+        pg.draw.rect(screen, self.effect_color, self.effect_bar)
+        pg.draw.rect(screen, (0, 255, 0), self.value)
+        screen.blit(self.label, (self.x, self.y))
+
 
 class NeoBeam: #追加機能４弾幕
     def __init__(self, bird:Bird, num:int):
@@ -355,6 +400,7 @@ def main():
     score = Score()
 
     bird = Bird(3, (900, 400))
+    hp = Hp(40, 800, 100, 4)
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
@@ -428,21 +474,27 @@ def main():
                 score.score_up(1)  # 1点アップ
             
             else:
-               bird.change_img(8, screen) # こうかとん悲しみエフェクト
-               score.update(screen)
-               pg.display.update()
-               time.sleep(2)
-               return
+                exps.add(Explosion(bomb, 50)) #爆発エフェクト
+                hp.hp -= 1 #㏋　ー１
+                if hp.hp == 0: #HPがなくなったら
+                    bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    return
 
         for bomb in pg.sprite.groupcollide(bombs,gravity, True, False).keys():
             exps.add(Explosion(bomb, 50))
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
-            bird.change_img(8, screen) # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            exps.add(Explosion(bomb, 50)) #爆発エフェクト
+            hp.hp -= 1 #HP -1
+            if hp.hp == 0: #HPがなくなったら
+                bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
         
         for bomb in pg.sprite.groupcollide(bombs, Shields, True, False).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
@@ -459,6 +511,8 @@ def main():
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
+        hp.update()
+        hp.draw(screen)
         emys.update()
         emys.draw(screen)
         bombs.update()
