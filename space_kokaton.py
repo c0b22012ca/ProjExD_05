@@ -146,7 +146,7 @@ class Bomb(pg.sprite.Sprite):
         self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height/2
-        self.speed = 6
+        self.speed = random.randint(6,12)
         self.cnt = 0
 
     def update(self):
@@ -519,7 +519,11 @@ def main():
                 pg.quit()
                 sys.exit()
             if i != 0 and event.type == pg.KEYDOWN and event.key == pg.K_SPACE: #クリア後スペースを押すともう一度プレイできる
+                pg.init()
                 main()
+                pg.quit()
+                pg.exit()
+
 
             if score.score >= 50 and len(fires) == 0:
                     fires.add(fire(bird,400))
